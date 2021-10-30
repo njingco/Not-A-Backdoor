@@ -15,9 +15,9 @@
 #include <arpa/inet.h>
 #include <linux/ip.h>
 #include <sys/prctl.h>
-
 #include "crypto.h"
 
+// I promise i wont do encryption like this later
 #define KEY "PASSWORD"
 #define IV "01234567890123412501234560123456"
 
