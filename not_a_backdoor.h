@@ -1,10 +1,12 @@
-#ifndef COVERT_UDP_H
-#define COVERT_UDP_H
+#ifndef NOT_A_BACKDOOR_H
+#define NOT_A_BACKDOOR_H
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <signal.h>
 #include <string.h>
+#include <stdbool.h>
+
 #include <unistd.h>
 #include <netdb.h>
 #include <netinet/in.h>
@@ -18,9 +20,10 @@
 #define ENC_LEN 4
 #define BUFF_EXTRA 100
 
-void forgepacket(unsigned int, unsigned int, unsigned short, unsigned short, int, int, int);
+void forgepacket(unsigned int source_addr, unsigned int dest_addr, unsigned short source_port, unsigned short dest_port, int svr, int ipid);
 void client(unsigned int source_addr, unsigned int dest_addr, unsigned short source_port, unsigned short dest_port, int ipid);
 void server(unsigned int source_addr, unsigned short source_port, unsigned short dest_port, int ipid);
+
 int charToInt(char msg);
 unsigned short in_cksum(unsigned short *, int);
 unsigned int host_convert(char *);

