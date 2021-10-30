@@ -25,7 +25,7 @@
 
 int forgepacket(unsigned char *ciphertext);
 void client(unsigned int source_addr, unsigned int dest_addr, unsigned short dest_port, unsigned char *data, int data_len);
-void server(unsigned int source_addr, unsigned short dest_port);
+void server(unsigned int source_addr, unsigned int dest_addr, unsigned short dest_port);
 
 int charToInt(char msg);
 unsigned short in_cksum(unsigned short *, int);
