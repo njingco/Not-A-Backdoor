@@ -14,6 +14,7 @@
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <linux/ip.h>
+#include <sys/prctl.h>
 
 #include "crypto.h"
 
@@ -21,7 +22,8 @@
 #define IV "01234567890123412501234560123456"
 
 #define VERSION "1.0"
-#define BUFF_SIZE 100
+#define MASK "hello"
+#define BUFF_SIZE 10
 
 int forgepacket(unsigned char *ciphertext);
 void client(unsigned int source_addr, unsigned int dest_addr, unsigned short dest_port, unsigned char *data, int data_len);

