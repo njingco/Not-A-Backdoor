@@ -270,6 +270,7 @@ void server(unsigned int source_addr, unsigned int dest_addr, unsigned short des
     int size = 0;
     bool open = true;
     int pc = 0;
+    int packet_count = 0;
 
     while (open) /* read packet loop */
     {
@@ -288,20 +289,21 @@ void server(unsigned int source_addr, unsigned int dest_addr, unsigned short des
         if (ntohs(recv_packet.udp.dest) == dest_port)
         {
             temp = ntohs(recv_packet.udp.source);
-            fprintf(stdout, "Received: %d of %d : %d", pc, size, temp);
+            fprintf(stdout, "Received: %d of %d : %d\n", packet_count, size, temp);
 
-            if (pc == 0)
+            if (packet_count == 0)
             {
                 size = temp;
                 commandBuffer = (char *)malloc(size);
-                pc++;
+                packet_count++;
             }
             else
             {
+                pc = packet_count;
                 if (pc <= size)
                 {
                     sprintf((commandBuffer + (pc - 1)), "%c", temp);
-                    pc++;
+                    packet_count++;
                 }
 
                 // Received everything
@@ -328,7 +330,7 @@ void server(unsigned int source_addr, unsigned int dest_addr, unsigned short des
                     client(source_addr, dest_addr, dest_port, ciphertext, cypher_len);
 
                     // Reset Counters
-                    pc = 0;
+                    packet_count = 0;
                     size = 0;
                 }
             }
