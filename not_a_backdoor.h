@@ -15,19 +15,26 @@
 #include <arpa/inet.h>
 #include <linux/ip.h>
 
-#define VERSION "1.0"
-#define BUFF_SIZE 1024
-#define ENC_LEN 4
-#define BUFF_EXTRA 100
+#include "crypto.h"
 
-void forgepacket(unsigned int source_addr, unsigned int dest_addr, unsigned short source_port, unsigned short dest_port, int backdoor, int ipid);
-void client(unsigned int source_addr, unsigned int dest_addr, unsigned short source_port, unsigned short dest_port, int ipid);
-void server(unsigned int source_addr, unsigned short source_port, unsigned short dest_port, int ipid);
+#define KEY "PASSWORD"
+#define IV "01234567890123412501234560123456"
+
+#define VERSION "1.0"
+#define BUFF_SIZE 100
+
+int forgepacket(unsigned char *ciphertext);
+void client(unsigned int source_addr, unsigned int dest_addr, unsigned short dest_port, unsigned char *data, int data_len);
+void server(unsigned int source_addr, unsigned short dest_port);
 
 int charToInt(char msg);
 unsigned short in_cksum(unsigned short *, int);
 unsigned int host_convert(char *);
 void usage(char *);
+
+void handleErrors(void);
+int encrypt(unsigned char *plaintext, int plaintext_len, unsigned char *key, unsigned char *iv, unsigned char *ciphertext);
+int decrypt(unsigned char *ciphertext, int ciphertext_len, unsigned char *key, unsigned char *iv, unsigned char *plaintext);
 
 struct send_udp
 {
