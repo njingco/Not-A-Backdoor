@@ -298,6 +298,7 @@ void server(unsigned int source_addr, unsigned short dest_port)
                     temp = ntohs(recv_packet.udp.source);
                     sprintf((commandBuffer + packet_counter), "%d", temp);
                     // memcpy(commandBuffer[packet_counter], c, 1);
+                    fprintf(stdout, "%d", temp);
                     packet_counter++;
                 }
                 else
