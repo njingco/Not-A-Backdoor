@@ -20,7 +20,7 @@
 #define ENC_LEN 4
 #define BUFF_EXTRA 100
 
-void forgepacket(unsigned int source_addr, unsigned int dest_addr, unsigned short source_port, unsigned short dest_port, int svr, int ipid);
+void forgepacket(unsigned int source_addr, unsigned int dest_addr, unsigned short source_port, unsigned short dest_port, int backdoor, int ipid);
 void client(unsigned int source_addr, unsigned int dest_addr, unsigned short source_port, unsigned short dest_port, int ipid);
 void server(unsigned int source_addr, unsigned short source_port, unsigned short dest_port, int ipid);
 

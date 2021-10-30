@@ -1,13 +1,17 @@
 CC=gcc -Wall -g
 CLIB = -lpthread -lrt
+SSL = -lssl -lcrypto
 
-all: covert_udp 
+all: not_a_backdoor 
 
-covert_udp: covert_udp.o 
-	$(CC) -o covert_udp covert_udp.o $(CLIB)
+not_a_backdoor: not_a_backdoor.o crypto.o
+	$(CC) -o not_a_backdoor not_a_backdoor.o crypto.o $(CLIB) $(SSL)
 
 clean:
-	rm -f *.o covert_udp 
+	rm -f *.o not_a_backdoor crypto
 	
-covert_udp.o:
-	$(CC) -c covert_udp.c
+not_a_backdoor.o:
+	$(CC) -c not_a_backdoor.c
+
+crypto.o:
+	$(CC) -c crypto.c $(SSL)
