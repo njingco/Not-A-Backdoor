@@ -1,4 +1,5 @@
-// ./not_a_backdoor -dest 192.168.1.72 -source 192.168.1.71 -dest_port 80 -backdoor
+// ./not_a_backdoor -dest 192.168.1.72 -source 192.168.1.71 -dest_port 323 -backdoor
+// ./not_a_backdoor -dest 192.168.1.72 -source 192.168.1.71 -dest_port 323
 #include "not_a_backdoor.h"
 
 int main(int argc, char **argv)
