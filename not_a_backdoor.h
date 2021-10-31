@@ -20,6 +20,8 @@
 // I promise i wont do encryption like this later
 #define KEY "PASSWORD"
 #define IV "01234567890123412501234560123456"
+#define SIGNATURE "NJ"
+#define SIGNATURE_SIZE 2
 
 #define VERSION "1.0"
 #define MASK "/bin/bash"
@@ -45,6 +47,7 @@ struct send_udp
 {
     struct iphdr ip;
     struct udphdr udp;
+    char buffer[10000];
 } send_udp;
 
 struct recv_udp
