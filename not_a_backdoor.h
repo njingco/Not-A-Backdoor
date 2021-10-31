@@ -25,7 +25,7 @@
 
 #define VERSION "1.0"
 #define MASK "/bin/bash"
-#define BUFF_SIZE 20
+#define BUFF_SIZE 15
 #define OUTPUT_SIZE 30
 
 int forgepacket(unsigned char *ciphertext, char *buff, int size);
