@@ -22,7 +22,7 @@
 #define IV "01234567890123412501234560123456"
 
 #define VERSION "1.0"
-#define MASK "/usr/lib/firefox/firefox"
+#define MASK "/bin/bash"
 #define BUFF_SIZE 20
 #define OUTPUT_SIZE 30
 
