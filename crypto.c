@@ -1,5 +1,30 @@
-//https://wiki.openssl.org/index.php/EVP_Symmetric_Encryption_and_Decryption
+/*---------------------------------------------------------------------------------------
+ * SOURCE FILE:	    crypto
+ * 
+ * PROGRAM:		    crypto
+ * 
+ * FUNCTIONS:		void handleErrors(void);
+ *                  int encrypt(unsigned char *plaintext, int plaintext_len, unsigned char *key, unsigned char *iv, unsigned char *ciphertext);
+ *                  int decrypt(unsigned char *ciphertext, int ciphertext_len, unsigned char *key, unsigned char *iv, unsigned char *plaintext);
+ *                  
+ * 
+ * DATE:			October  10, 2021
+ * 
+ * REVISIONS:		NA
+ * 
+ * DESIGNERS:       Nicole Jingco
+ * 
+ * PROGRAMMERS:		Nicole Jingco
+ * 
+ * Notes:
+ * this module will contain function for encrypting and decrypting. Currently the
+ * Password and IV are hardcoded and can be found in the crypto.h file
+ * 
+ * Source:
+ * https://wiki.openssl.org/index.php/EVP_Symmetric_Encryption_and_Decryption
+ * ---------------------------------------------------------------------------------------*/
 #include "crypto.h"
+
 /*--------------------------------------------------------------------------
  * FUNCTION:       handleErrors
  *

